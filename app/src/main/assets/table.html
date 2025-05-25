@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routine Manager</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(135deg, #e2c8f5, #f7d5d7, #fdf5d7, #d6f7d0);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-weight: bold;
+            font-size: 19px;
+        }
+
+        /* Container styling */
+        .container {
+            background: linear-gradient(135deg, #cce0ff, #e6f7ff, #b3d9ff, #99c2ff);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: calc(100vh - 0px);
+            margin: 0 auto;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        /* Progress Bar at the Top */
+        .progress-section {
+            margin-bottom: 20px;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 10px;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 50%; /* Initially set to 50% */
+            background: linear-gradient(135deg, #ffdd00, #ffcc00, #ffaa00, #ff8800);
+            transition: width 0.5s ease-in-out;
+            border-radius: 10px;
+        }
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Form styling */
+        form {
+            font-weight: bold;
+            color: #28a745;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-top: 10px;
+        }
+
+        input, button {
+            margin-top: 5px;
+            padding: 10px;
+            border: 3px solid #000;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        button {
+            background: linear-gradient(to right, #00ff00, #004d00);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+        }
+
+        table, th, td {
+            border: 3px solid #000;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Time display styling */
+        .time-display {
+            background: linear-gradient(#c71585, #ff9a9e, #fad0c4);
+            border-radius: 1000px;
+            padding: 10px;
+            color: #000;
+            font-weight: bold;
+            text-align: center;
+            display: inline-block;
+            width: 85%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: red;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "❌";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(to right, #00ff00, #004d00);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+            content: "✔";
+            color: green;
+        }
+
+        /* Disabled toggle switch */
+        .disabled-switch .slider {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .disabled-switch input:checked + .slider {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-section">
+            <h3>Life</h3>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress"></div>
+                <div class="progress-text" id="progress-text">50%</div>
+            </div>
+        </div>
+        <div id="current-day" class="current-day"></div>
+        <div id="task-count">
+            Total Tasks: <span id="total-tasks">0</span> | Completed: <span id="completed-tasks">0</span>
+        </div>
+        <form id="routine-form">
+            <label for="time">DEADLINE:</label>
+            <input type="time" id="time" required>
+            <label for="task">TASK:</label>
+            <input type="text" id="task" required>
+            <button type="submit">Add Task</button>
+        </form>
+        <table id="task-table">
+            <thead>
+                <tr>
+                    <th>DEADLINE</th>
+                    <th>TASK</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="task-list"></tbody>
+        </table>
+        <button id="clear-all" type="button">Clear All</button>
+    </div>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const routineForm = document.getElementById('routine-form');
+            const taskTableBody = document.getElementById('task-list');
+            const currentDayDisplay = document.getElementById('current-day');
+            const clearAllButton = document.getElementById('clear-all');
+            const totalTasksDisplay = document.getElementById('total-tasks');
+            const completedTasksDisplay = document.getElementById('completed-tasks');
+
+            let tasks = [];
+  calculateProgress();
+            // Initial progress value
+            // Check every minute
+
+
+            // Get current day
+            function getCurrentDay() {
+                const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+                return days[new Date().getDay()];
+            }
+
+            // Update current day display
+            function updateDay() {
+                currentDayDisplay.textContent = `[ ${getCurrentDay()} ]`;
+            }
+
+            // Format time to AM/PM
+            function formatTime(time) {
+                if (!time) return '';
+                const [hours, minutes] = time.split(':');
+                let period = 'AM';
+                let hour = parseInt(hours, 10);
+
+                if (hour >= 12) {
+                    period = 'PM';
+                    hour = hour > 12 ? hour - 12 : hour;
+                } else if (hour === 0) {
+                    hour = 12;
+                }
+
+                return `${hour}:${minutes} ${period}`;
+            }
+
+            // Save tasks to localStorage
+            function saveTasks() {
+                const allTasks = JSON.parse(localStorage.getItem('tasks')) || {};
+                allTasks[getCurrentDay()] = tasks;
+                localStorage.setItem('tasks', JSON.stringify(allTasks));
+            }
+
+            // Load tasks from localStorage
+            function loadTasks() {
+                const allTasks = JSON.parse(localStorage.getItem('tasks')) || {};
+                tasks = allTasks[getCurrentDay()] || [];
+                renderTasks();
+
+                updateTaskCount();
+            }
+
+            // Render tasks in the table
+            function renderTasks() {
+                taskTableBody.innerHTML = '';
+                tasks.forEach((task, index) => {
+                    const row = document.createElement('tr');
+                    row.classList.add('task-row');
+
+                    const isChecked = task.status === 'done';
+                    const isExpired = checkIfExpired(task.time);
+
+                    row.innerHTML = `
+                        <td class="time-col">
+                            <div class="time-display">${formatTime(task.time)}</div>
+                            <button class="delete-btn" data-index="${index}">Delete</button>
+                        </td>
+                        <td>${task.task}</td>
+                        <td class="status-box">
+                            <label class="switch ${isExpired ? 'disabled-switch' : ''}">
+                                <input type="checkbox" class="status-toggle" data-index="${index}" ${isChecked ? 'checked' : ''} ${isExpired ? 'disabled' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                    `;
+                    taskTableBody.appendChild(row);
+                });
+            }
+
+            // Add a new task
+            function addTask(time, taskText) {
+                if (isPastDeadline(time)) {
+                    alert('Cannot add a task with a past deadline.');
+                    return;
+                }
+                tasks.push({ time, task: taskText, status: 'none' });
+                saveTasks();
+                renderTasks();
+             
+                updateTaskCount();
+            }
+
+            // Update task status
+            function updateTask(index, status) {
+                if (tasks[index]) {
+                    tasks[index].status = status;
+                    saveTasks();
+                    renderTasks();
+                    calculateProgress();
+                    updateTaskCount();
+                }
+            }
+
+            // Delete a task
+            function deleteTask(index) {
+                tasks.splice(index, 1);
+                saveTasks();
+                renderTasks();
+                
+                updateTaskCount();
+            }
+
+            // Clear all tasks
+            function clearAllTasks() {
+                if (confirm('Are you sure you want to clear all tasks?')) {
+                    tasks = [];
+                    saveTasks();
+                    renderTasks();
+                    
+                    updateTaskCount();
+                }
+            }
+
+            // Check if a deadline has passed
+            function checkIfExpired(deadlineTime) {
+                const currentTime = new Date();
+                const [hours, minutes] = deadlineTime.split(':').map(Number);
+                const deadline = new Date();
+                deadline.setHours(hours, minutes, 0, 0);
+                return currentTime > deadline;
+            }
+
+            // Check if a deadline is in the past
+            function isPastDeadline(time) {
+                const [hours, minutes] = time.split(':').map(Number);
+                const now = new Date();
+                const deadline = new Date();
+                deadline.setHours(hours, minutes, 0, 0);
+                return now > deadline;
+            }
+
+            // Calculate and update progress
+           function calculateProgress() {
+    let totalTasks = tasks.length;
+    let progress = parseInt(localStorage.getItem('progress')) || 50;
+taskmap=new Map();
+    for (let i = 0; i < totalTasks; i++) {
+        let task = tasks[i];
+
+
+        if ( task.status === 'done' && taskmap[task]!=='done') {
+            progress += 5; // Increase for completed tasks
+            taskmap.set(task,task.status);
+        }
+
+        if (checkIfExpired(task.time) && task.status !== 'done') {
+            progress -= 10; // Decrease for expired & incomplete tasks
+        }
+    }
+
+    // Ensure progress stays within 0-100 range
+    progress = Math.max(0, Math.min(progress, 100));
+    localStorage.setItem('progress', progress);
+
+    // Update progress UI
+    document.getElementById("progress").style.width = progress + "%";
+    document.getElementById("progress-text").innerText = progress + "%";
+}
+
+
+            
+
+            // Update task count
+            function updateTaskCount() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.status === 'done').length;
+                totalTasksDisplay.textContent = totalTasks;
+                completedTasksDisplay.textContent = completedTasks;
+            }
+
+            // Event listeners
+            routineForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const time = document.getElementById('time').value;
+                const task = document.getElementById('task').value;
+
+                if (time && task) {
+                    addTask(time, task);
+                    routineForm.reset();
+                }
+            });
+
+            taskTableBody.addEventListener('change', function (event) {
+    const checkbox = event.target;
+    if (checkbox.classList.contains('status-toggle')) {
+        const index = checkbox.getAttribute('data-index');
+
+        // Only allow changing status if it wasn't already "done"
+        if (tasks[index].status !== 'done') {
+            const newStatus = checkbox.checked ? 'done' : 'left';
+            updateTask(index, newStatus);
+
+            // Disable checkbox after marking it "done"
+            if (newStatus === 'done') {
+                checkbox.disabled = true;
+            }
+        } else {
+            checkbox.checked = true; // Prevent unchecking after being set to "done"
+        }
+    }
+});
+
+
+            taskTableBody.addEventListener('click', function (event) {
+                if (event.target.classList.contains('delete-btn')) {
+                    const index = event.target.getAttribute('data-index');
+                    deleteTask(index);
+                }
+            });
+
+            clearAllButton.addEventListener('click', clearAllTasks);
+
+            // Initialize
+            updateDay();
+            loadTasks();
+        });
+    </script>
+</body>
+</html>
