@@ -1,6 +1,4 @@
-Sure! Here's a professional README.md file for your routine manager app based on your HTML/CSS/JS code. You can customize it further if you want.
 
----
 
 # Time-up
 
