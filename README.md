@@ -21,7 +21,7 @@ A simple and visually appealing web-based routine manager to help you track dail
 Since this is a web-based project, you can run it directly in any modern web browser.
 
 1. Clone or download this repository.
-2. Open the `index.html` file in your browser.
+2. Open the `table.html` file in your browser.
 
 ## Usage
 
